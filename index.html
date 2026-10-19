@@ -54,7 +54,7 @@
   button.primary { background: var(--brand); color: var(--brand-ink); border-color: var(--brand); font-weight: 600; }
   button:disabled { opacity: .5; cursor: not-allowed; }
   .actions { display: grid; gap: 10px; }
-  @media (min-width: 560px) { .actions { grid-template-columns: repeat(3, 1fr); } }
+  @media (min-width: 560px) { .actions { grid-template-columns: 2fr 1fr; } }
   .summary { white-space: pre-wrap; font: .9rem/1.5 ui-monospace, Consolas, monospace; background: var(--bg); border: 1px solid var(--line); border-radius: 10px; padding: 14px; max-height: 50vh; overflow: auto; }
   .muted { color: var(--muted); }
   .badge { display: inline-block; font-size: .8rem; padding: 2px 8px; border-radius: 99px; background: var(--brand-soft); color: var(--brand); }
@@ -86,8 +86,8 @@
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
 <script>
-/* Destinatario de las respuestas. */
-const TO = "raynerteran@gmail.com";
+/* Las respuestas se envían por WhatsApp a este número (formato internacional, sin "+" ni espacios). */
+const WHATSAPP = "5491166138507";
 const STORE = "alfasur-cuestionario-vagones-v1";
 
 /* Preguntas: cada una tiene opciones de selección simple y siempre un campo para explicar. */
@@ -228,33 +228,37 @@ function render() {
 
 /* Texto plano de las respuestas (para el correo, copiar o descargar). */
 function buildText() {
-  const lines = ["CUESTIONARIO DE VAGONES — Alfa Sur", `Fecha: ${new Date().toLocaleString("es-VE")}`];
-  if (state.who.nombre || state.who.cargo) lines.push(`Responde: ${[state.who.nombre, state.who.cargo].filter(Boolean).join(" — ")}`);
+  // Formato pensado para WhatsApp: *negrita* en títulos.
+  // Solo van las preguntas respondidas (el mensaje queda corto y legible).
+  const body = [];
   let answered = 0, total = 0;
   SECTIONS.forEach((sec) => {
-    lines.push("", `== ${sec.title.toUpperCase()} ==`);
+    const block = [];
     sec.questions.forEach((q, i) => {
       total++;
       const a = state.answers[q.id] || {};
-      if (a.choice || a.note) answered++;
-      lines.push(`${i + 1}. ${q.text}`, `   → ${a.choice || "(sin responder)"}`);
-      if (a.note && a.note.trim()) lines.push(`   Nota: ${a.note.trim().replace(/\n+/g, " / ")}`);
+      const note = (a.note || "").trim().replace(/\n+/g, " / ");
+      if (!a.choice && !note) return;
+      answered++;
+      block.push(`${i + 1}. ${q.text}`, `→ ${a.choice || "(sin elegir opción)"}`);
+      if (note) block.push(`Nota: ${note}`);
     });
+    if (block.length) body.push("", `*${sec.title.toUpperCase()}*`, ...block);
   });
-  lines.splice(3, 0, `Respondidas: ${answered} de ${total}`);
-  return lines.join("\n");
+  const head = ["*CUESTIONARIO DE VAGONES — Alfa Sur*", `Fecha: ${new Date().toLocaleString("es-VE")}`];
+  if (state.who.nombre || state.who.cargo) head.push(`Responde: ${[state.who.nombre, state.who.cargo].filter(Boolean).join(" — ")}`);
+  head.push(`Respondidas: ${answered} de ${total}`);
+  return [...head, ...body].join("\n");
 }
 
 function renderSummary() {
   document.getElementById("stepLabel").textContent = "Revisar y enviar";
   const text = buildText();
-  const subject = `Cuestionario de vagones${state.who.nombre ? " — " + state.who.nombre : ""}`;
   app.innerHTML = `<section class="card">
     <h2>¡Gracias! Revise y envíe sus respuestas</h2>
-    <p class="muted">Se arma un correo para <strong>${esc(TO)}</strong> con todas las respuestas. Elija cómo enviarlo. Si el correo no se abre, use «Copiar respuestas» y péguelas en un mensaje (correo o WhatsApp).</p>
+    <p class="muted">Al tocar «Enviar respuestas por WhatsApp» se abre un chat con Alfa Sur (<strong>+54 9 11 6613-8507</strong>) con todas las respuestas ya escritas: solo tiene que pulsar enviar. Si no se abre WhatsApp, use «Copiar respuestas» y péguelas en un mensaje.</p>
     <div class="actions">
-      <button class="primary" id="gmail" type="button">Enviar con Gmail</button>
-      <button id="mailto" type="button">Abrir mi app de correo</button>
+      <button class="primary" id="whatsapp" type="button">Enviar respuestas por WhatsApp</button>
       <button id="copy" type="button">Copiar respuestas</button>
     </div>
     <p class="muted" style="margin:14px 0 6px">Vista previa:</p>
@@ -263,23 +267,19 @@ function renderSummary() {
   </section>`;
 
   const copy = async () => { try { await navigator.clipboard.writeText(text); return true; } catch (e) { return false; } };
-  /* Los enlaces de correo tienen un largo máximo (Gmail ~6.000, otras apps ~1.800 caracteres).
-     Si las respuestas no caben, se copian y el correo se abre pidiendo pegarlas. */
-  const bodyFor = async (limit) => {
-    const full = encodeURIComponent(text);
-    if (full.length <= limit) return full;
-    const ok = await copy();
-    toast(ok ? "Respuestas copiadas: péguelas en el correo con Ctrl+V" : "Use «Copiar respuestas» y péguelas en el correo");
-    return encodeURIComponent("Las respuestas son largas para el enlace: pegue aquí el texto copiado (Ctrl+V).\n\n");
-  };
-  document.getElementById("gmail").onclick = async () => {
-    // Se abre la pestaña de inmediato (si no, el navegador la bloquea) y luego se carga el correo.
+  document.getElementById("whatsapp").onclick = async () => {
+    // La pestaña se abre de inmediato (si se abre después de copiar, el navegador la bloquea).
     const win = window.open("about:blank", "_blank");
-    const url = `https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(TO)}&su=${encodeURIComponent(subject)}&body=${await bodyFor(6000)}`;
-    if (win) win.location.href = url; else window.location.href = url;
-  };
-  document.getElementById("mailto").onclick = async () => {
-    window.location.href = `mailto:${TO}?subject=${encodeURIComponent(subject)}&body=${await bodyFor(1800)}`;
+    let msg = encodeURIComponent(text);
+    // Un enlace muy largo puede no abrir en algunos teléfonos: en ese caso se copian y el chat se abre pidiendo pegarlas.
+    if (msg.length > 7500) {
+      const ok = await copy();
+      toast(ok ? "Respuestas copiadas: péguelas en el chat y envíe" : "Use «Copiar respuestas» y péguelas en el chat");
+      msg = encodeURIComponent("Hola, envío las respuestas del cuestionario de vagones (las pego a continuación):\n\n");
+    }
+    const url = `https://wa.me/${WHATSAPP}?text=${msg}`;
+    if (win) win.location.href = url;
+    else window.location.href = url;
   };
   document.getElementById("copy").onclick = async () => toast((await copy()) ? "Respuestas copiadas" : "No se pudo copiar: seleccione el texto de la vista previa");
   document.getElementById("download").onclick = () => {
