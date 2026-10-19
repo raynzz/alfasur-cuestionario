@@ -1,0 +1,314 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Cuestionario de vagones</title>
+<style>
+  :root {
+    --bg: #faf7f2; --card: #ffffff; --ink: #2a2622; --muted: #6f675f; --line: #e6dfd5;
+    --brand: #c2410c; --brand-ink: #ffffff; --brand-soft: #fdf0e9; --ok: #2f7d4f; --radius: 12px;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #1c1916; --card: #262220; --ink: #f2ede6; --muted: #a79f95; --line: #3a3430;
+      --brand: #ea7a45; --brand-ink: #1c1916; --brand-soft: #3a2a22; --ok: #5fbf86;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #1c1916; --card: #262220; --ink: #f2ede6; --muted: #a79f95; --line: #3a3430;
+    --brand: #ea7a45; --brand-ink: #1c1916; --brand-soft: #3a2a22; --ok: #5fbf86;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--ink); font: 16px/1.5 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+  .wrap { max-width: 760px; margin: 0 auto; padding: 24px 16px 96px; }
+  header { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 20px; }
+  header img { height: 34px; width: auto; }
+  @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) header img { filter: brightness(0) invert(1); } }
+  :root[data-theme="dark"] header img { filter: brightness(0) invert(1); }
+  h1 { font-size: 1.5rem; margin: 0 0 4px; letter-spacing: -0.01em; }
+  h2 { font-size: 1.15rem; margin: 0 0 4px; }
+  p.lead { color: var(--muted); margin: 0 0 20px; }
+  .progress { height: 6px; background: var(--line); border-radius: 99px; overflow: hidden; margin: 8px 0 4px; }
+  .progress > div { height: 100%; background: var(--brand); width: 0; transition: width .25s; }
+  .steps { display: flex; justify-content: space-between; color: var(--muted); font-size: .85rem; margin-bottom: 18px; }
+  .card { background: var(--card); border: 1px solid var(--line); border-radius: var(--radius); padding: 20px; margin-bottom: 16px; }
+  .q { padding: 18px 0; border-top: 1px solid var(--line); }
+  .q:first-of-type { border-top: 0; padding-top: 4px; }
+  .q-title { font-weight: 600; margin: 0 0 2px; }
+  .q-help { color: var(--muted); font-size: .9rem; margin: 0 0 10px; }
+  .opts { display: grid; gap: 8px; margin: 10px 0; }
+  @media (min-width: 560px) { .opts.two { grid-template-columns: 1fr 1fr; } }
+  .opt { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border: 1px solid var(--line); border-radius: 10px; cursor: pointer; background: transparent; transition: border-color .15s, background .15s; }
+  .opt:hover { border-color: var(--brand); }
+  .opt input { accent-color: var(--brand); width: 18px; height: 18px; margin: 0; flex: none; }
+  .opt.checked { border-color: var(--brand); background: var(--brand-soft); }
+  textarea, input[type="text"] { width: 100%; border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; font: inherit; color: inherit; background: var(--bg); }
+  textarea { min-height: 64px; resize: vertical; }
+  textarea:focus, input[type="text"]:focus, .opt:focus-within { outline: 3px solid color-mix(in srgb, var(--brand) 35%, transparent); outline-offset: 1px; }
+  label.small { display: block; font-size: .85rem; color: var(--muted); margin: 6px 0 4px; }
+  .grid2 { display: grid; gap: 12px; }
+  @media (min-width: 560px) { .grid2 { grid-template-columns: 1fr 1fr; } }
+  .nav { position: sticky; bottom: 0; background: color-mix(in srgb, var(--bg) 92%, transparent); backdrop-filter: blur(6px); padding: 12px 0; display: flex; gap: 10px; justify-content: space-between; border-top: 1px solid var(--line); }
+  button { font: inherit; border-radius: 10px; padding: 11px 18px; cursor: pointer; border: 1px solid var(--line); background: var(--card); color: var(--ink); min-height: 44px; }
+  button.primary { background: var(--brand); color: var(--brand-ink); border-color: var(--brand); font-weight: 600; }
+  button:disabled { opacity: .5; cursor: not-allowed; }
+  .actions { display: grid; gap: 10px; }
+  @media (min-width: 560px) { .actions { grid-template-columns: repeat(3, 1fr); } }
+  .summary { white-space: pre-wrap; font: .9rem/1.5 ui-monospace, Consolas, monospace; background: var(--bg); border: 1px solid var(--line); border-radius: 10px; padding: 14px; max-height: 50vh; overflow: auto; }
+  .muted { color: var(--muted); }
+  .badge { display: inline-block; font-size: .8rem; padding: 2px 8px; border-radius: 99px; background: var(--brand-soft); color: var(--brand); }
+  .toast { position: fixed; left: 50%; bottom: 84px; transform: translateX(-50%); background: var(--ink); color: var(--bg); padding: 10px 16px; border-radius: 10px; opacity: 0; transition: opacity .2s; pointer-events: none; }
+  .toast.show { opacity: 1; }
+  .link-btn { background: none; border: 0; color: var(--brand); padding: 0; min-height: 0; text-decoration: underline; cursor: pointer; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <img src="alfasur-logo.png" alt="Grupo Alfasur" />
+    <span class="badge">Cuestionario de planta</span>
+  </header>
+
+  <h1>Funcionamiento de los vagones</h1>
+  <p class="lead">Estas preguntas nos ayudan a configurar la plataforma igual a como trabaja la planta. Elija la opción que más se parezca y, si hace falta, explique con sus palabras. Ninguna pregunta es obligatoria. Lo que responda se guarda en este navegador mientras avanza.</p>
+
+  <div class="progress" aria-hidden="true"><div id="bar"></div></div>
+  <div class="steps"><span id="stepLabel"></span><span id="stepCount"></span></div>
+
+  <main id="app"></main>
+
+  <div class="nav">
+    <button id="prev" type="button">Anterior</button>
+    <button id="next" type="button" class="primary">Siguiente</button>
+  </div>
+</div>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script>
+/* Destinatario de las respuestas. */
+const TO = "raynerteran@gmail.com";
+const STORE = "alfasur-cuestionario-vagones-v1";
+
+/* Preguntas: cada una tiene opciones de selección simple y siempre un campo para explicar. */
+const SECTIONS = [
+  {
+    title: "Vagones en general",
+    questions: [
+      { id: "cantidad", text: "¿Cuántos vagones tiene la planta en total?", options: ["Menos de 20", "Exactamente 20", "Entre 21 y 30", "Más de 30"] },
+      { id: "iguales", text: "¿Todos los vagones son iguales (mismo tamaño y capacidad)?", options: ["Sí, todos iguales", "Hay de dos o más tamaños", "Depende del producto que llevan"] },
+      { id: "nomenclatura", text: "¿Cómo se identifica cada vagón?", help: "Por ejemplo: V-01, 1, A-1, un color…", options: ["Número simple (1, 2, 3…)", "Letra + número (V-01, A-1…)", "Por color o marca física", "No tienen identificación"] },
+      { id: "fisica", text: "¿La identificación está marcada físicamente en el vagón?", options: ["Sí, pintada o con placa", "Sí, pero se borra o se pierde", "No, se sabe por la posición", "No"] },
+      { id: "estado", text: "¿Hay vagones fuera de servicio con frecuencia (reparación, dañados)?", options: ["Casi nunca", "A veces 1 o 2", "Frecuentemente varios", "No sé"] },
+    ],
+  },
+  {
+    title: "Qué lleva un vagón",
+    questions: [
+      { id: "mezcla", text: "¿Un vagón puede llevar varios productos a la vez?", help: "Por ejemplo bloques de 10 y de 15 en el mismo vagón.", options: ["No, siempre un solo producto", "Sí, a veces se mezclan", "Sí, se mezclan seguido"] },
+      { id: "productos", text: "¿Qué productos pasan por los vagones?", options: ["Todos los productos", "Solo los bloques", "Bloques y algunos otros", "Depende de la línea de producción"] },
+      { id: "mb10", text: "¿Cuántos bloques de 10 (Maxi Bloque 10) caben en un vagón lleno?", options: ["Menos de 500", "Entre 500 y 1.000", "Entre 1.000 y 1.500", "Más de 1.500", "Varía mucho"] },
+      { id: "mb15", text: "¿Cuántos bloques de 15 (Maxi Bloque 15) caben en un vagón lleno?", options: ["Menos de 500", "Entre 500 y 1.000", "Entre 1.000 y 1.500", "Más de 1.500", "Varía mucho"] },
+      { id: "otros_capacidad", text: "Para los demás productos, ¿se sabe cuántas piezas caben por vagón?", help: "Si las conoce, escríbalas abajo (producto y cantidad).", options: ["Sí, hay una cantidad fija por producto", "Más o menos, depende", "No se lleva esa cuenta"] },
+      { id: "lleno", text: "¿Los vagones siempre salen llenos?", options: ["Sí, siempre se llenan", "Casi siempre", "A menudo salen a medias", "Se llenan según lo que pidan"] },
+    ],
+  },
+  {
+    title: "Carga del vagón",
+    questions: [
+      { id: "como_carga", text: "¿Cómo se carga el vagón?", options: ["A mano", "Con montacargas o paletas", "Directo desde la máquina (prensa/moldeadora)", "Combinación de las anteriores"] },
+      { id: "tiempo_carga", text: "¿Cuánto tarda en llenarse un vagón?", options: ["Menos de 30 minutos", "Entre 30 minutos y 1 hora", "Entre 1 y 3 horas", "Más de 3 horas"] },
+      { id: "quien_registra", text: "¿Quién anota lo que se cargó en cada vagón?", options: ["El supervisor de planta", "El operador de la máquina", "Nadie lo anota hoy", "Otra persona"] },
+      { id: "como_registra", text: "¿Dónde se anota hoy?", options: ["En papel / cuaderno", "En Excel", "En un grupo de WhatsApp", "No se anota"] },
+      { id: "momento", text: "¿Cuándo se registra la carga?", options: ["Al terminar de llenar cada vagón", "Al final del turno", "Al final del día", "Cuando se acuerdan"] },
+    ],
+  },
+  {
+    title: "Proceso: curado, secado u horno",
+    questions: [
+      { id: "destino", text: "Después de cargado, ¿a dónde va el vagón?", options: ["A una cámara de curado", "A un horno", "A secar al aire libre / bajo techo", "Otro proceso"] },
+      { id: "duracion", text: "¿Cuánto tiempo pasa el producto en ese proceso?", options: ["Menos de 12 horas", "Entre 12 y 24 horas", "Entre 1 y 3 días", "Más de 3 días", "Depende del producto"] },
+      { id: "por_dia", text: "¿Cuántos vagones se cargan normalmente en un día?", options: ["Menos de 10", "Entre 10 y 20", "Entre 21 y 30", "Más de 30", "Varía mucho"] },
+      { id: "vueltas", text: "¿Un mismo vagón se usa más de una vez en el mismo día?", options: ["No, una vez por día o menos", "Sí, 2 vueltas", "Sí, 3 o más vueltas"] },
+      { id: "turnos", text: "¿Cómo trabaja la planta?", options: ["Un turno, lunes a viernes", "Un turno, lunes a sábado", "Dos o más turnos", "24 horas"] },
+      { id: "limite", text: "¿Qué suele limitar cuánto se produce en un día?", options: ["La cantidad de vagones", "La capacidad de la máquina", "La materia prima", "El personal", "Los pedidos (se produce lo que piden)"] },
+    ],
+  },
+  {
+    title: "Descarga y calidad",
+    questions: [
+      { id: "como_descarga", text: "¿Cómo se descarga el vagón?", options: ["A mano", "Con montacargas / paletas", "Se vacía directo en el patio", "Combinación"] },
+      { id: "cuenta", text: "Al descargar, ¿se cuentan las piezas buenas y las dañadas?", options: ["Sí, se cuentan todas", "Solo se estiman", "Solo se cuentan las dañadas", "No se cuentan"] },
+      { id: "danadas", text: "¿Qué porcentaje de piezas sale dañado normalmente?", options: ["Casi ninguna (menos de 1 %)", "Entre 1 % y 5 %", "Entre 5 % y 10 %", "Más de 10 %", "No se sabe"] },
+      { id: "destino_danadas", text: "¿Qué se hace con las piezas defectuosas?", options: ["Se botan", "Se reciclan (se muelen y se reusan)", "Se venden como segunda", "Depende del daño"] },
+      { id: "despues", text: "Las piezas buenas, ¿a dónde van al descargarlas?", options: ["Al patio de almacenamiento", "Se paletizan y se guardan", "Directo al camión del cliente", "Depende"] },
+    ],
+  },
+  {
+    title: "Despacho",
+    questions: [
+      { id: "desde_donde", text: "¿Desde dónde se despacha al cliente?", options: ["Desde el patio / almacén", "Directo desde el vagón", "Ambas, depende del pedido"] },
+      { id: "paletas", text: "¿El producto se despacha en paletas?", options: ["Sí, siempre en paletas", "A veces", "No, suelto"] },
+      { id: "por_paleta", text: "Si usan paletas, ¿cuántas piezas lleva una paleta?", help: "Escriba abajo la cantidad por producto si la conoce.", options: ["Cantidad fija por producto", "Varía", "No usamos paletas"] },
+      { id: "asigna", text: "¿Quién decide qué producto (de qué vagón o lote) va a cada pedido?", options: ["Oficina", "El supervisor de despacho", "El supervisor de planta", "No se asigna: se despacha lo que haya"] },
+      { id: "espera_liberar", text: "¿Hay que esperar un tiempo desde que se descarga hasta poder despachar?", options: ["No, se despacha enseguida", "Sí, unas horas", "Sí, 1 a 3 días", "Sí, más de 3 días"] },
+    ],
+  },
+  {
+    title: "Materia prima (para más adelante)",
+    questions: [
+      { id: "materiales", text: "¿Qué materias primas usa la fabricación de bloques?", help: "Escriba abajo cuáles (arcilla, arena, cemento, agua, aditivos, gas…).", options: ["Las conozco y las escribo abajo", "Las sabe otra persona", "No sé"] },
+      { id: "consumo", text: "¿Se sabe cuánta materia prima consume un vagón o una pieza?", options: ["Sí, hay una medida establecida", "Más o menos", "No se controla"] },
+      { id: "quedarse_sin", text: "¿Les ha pasado quedarse sin materia prima y parar la producción?", options: ["Nunca", "Pocas veces", "Varias veces al año", "Seguido"] },
+    ],
+  },
+];
+
+/* ── Estado (se guarda en este navegador) ── */
+let state = { step: 0, who: { nombre: "", cargo: "" }, answers: {} };
+try { const saved = JSON.parse(localStorage.getItem(STORE) || "null"); if (saved) state = { ...state, ...saved }; } catch (e) {}
+const save = () => { try { localStorage.setItem(STORE, JSON.stringify(state)); } catch (e) {} };
+
+const app = document.getElementById("app");
+const TOTAL = SECTIONS.length + 2; // datos + secciones + resumen
+const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+
+function render() {
+  const s = state.step;
+  document.getElementById("bar").style.width = `${Math.round((s / (TOTAL - 1)) * 100)}%`;
+  document.getElementById("stepCount").textContent = `Paso ${s + 1} de ${TOTAL}`;
+  document.getElementById("prev").disabled = s === 0;
+  const next = document.getElementById("next");
+  next.style.display = s === TOTAL - 1 ? "none" : "";
+  next.textContent = s === TOTAL - 2 ? "Revisar y enviar" : "Siguiente";
+
+  if (s === 0) {
+    document.getElementById("stepLabel").textContent = "Sus datos";
+    app.innerHTML = `<section class="card">
+      <h2>¿Quién responde?</h2>
+      <p class="muted">Para saber a quién consultar si alguna respuesta necesita más detalle.</p>
+      <div class="grid2">
+        <div><label class="small" for="nombre">Nombre</label><input type="text" id="nombre" value="${esc(state.who.nombre)}" autocomplete="name"></div>
+        <div><label class="small" for="cargo">Cargo</label><input type="text" id="cargo" value="${esc(state.who.cargo)}" placeholder="Supervisor de planta, gerente…"></div>
+      </div></section>`;
+    ["nombre", "cargo"].forEach((k) => document.getElementById(k).addEventListener("input", (e) => { state.who[k] = e.target.value; save(); }));
+    return;
+  }
+
+  if (s === TOTAL - 1) return renderSummary();
+
+  const sec = SECTIONS[s - 1];
+  document.getElementById("stepLabel").textContent = sec.title;
+  app.innerHTML = `<section class="card"><h2>${esc(sec.title)}</h2>${sec.questions.map((q) => {
+    const a = state.answers[q.id] || {};
+    return `<div class="q">
+      <p class="q-title">${esc(q.text)}</p>
+      ${q.help ? `<p class="q-help">${esc(q.help)}</p>` : ""}
+      <div class="opts ${q.options.length > 3 ? "two" : ""}" role="radiogroup" aria-label="${esc(q.text)}">
+        ${q.options.map((o, i) => `<label class="opt ${a.choice === o ? "checked" : ""}"><input type="radio" name="${q.id}" value="${esc(o)}" ${a.choice === o ? "checked" : ""}> <span>${esc(o)}</span></label>`).join("")}
+        <label class="opt ${a.choice === "Otro" ? "checked" : ""}"><input type="radio" name="${q.id}" value="Otro" ${a.choice === "Otro" ? "checked" : ""}> <span>Otro (lo explico abajo)</span></label>
+      </div>
+      <label class="small" for="t_${q.id}">Algo más que quiera explicar</label>
+      <textarea id="t_${q.id}" data-q="${q.id}" placeholder="Opcional">${esc(a.note || "")}</textarea>
+    </div>`;
+  }).join("")}</section>`;
+
+  app.querySelectorAll('input[type="radio"]').forEach((r) => r.addEventListener("change", (e) => {
+    const id = e.target.name;
+    state.answers[id] = { ...(state.answers[id] || {}), choice: e.target.value };
+    save();
+    e.target.closest(".opts").querySelectorAll(".opt").forEach((l) => l.classList.toggle("checked", l.querySelector("input").checked));
+  }));
+  app.querySelectorAll("textarea").forEach((t) => t.addEventListener("input", (e) => {
+    const id = e.target.dataset.q;
+    state.answers[id] = { ...(state.answers[id] || {}), note: e.target.value };
+    save();
+  }));
+}
+
+/* Texto plano de las respuestas (para el correo, copiar o descargar). */
+function buildText() {
+  const lines = ["CUESTIONARIO DE VAGONES — Alfa Sur", `Fecha: ${new Date().toLocaleString("es-VE")}`];
+  if (state.who.nombre || state.who.cargo) lines.push(`Responde: ${[state.who.nombre, state.who.cargo].filter(Boolean).join(" — ")}`);
+  let answered = 0, total = 0;
+  SECTIONS.forEach((sec) => {
+    lines.push("", `== ${sec.title.toUpperCase()} ==`);
+    sec.questions.forEach((q, i) => {
+      total++;
+      const a = state.answers[q.id] || {};
+      if (a.choice || a.note) answered++;
+      lines.push(`${i + 1}. ${q.text}`, `   → ${a.choice || "(sin responder)"}`);
+      if (a.note && a.note.trim()) lines.push(`   Nota: ${a.note.trim().replace(/\n+/g, " / ")}`);
+    });
+  });
+  lines.splice(3, 0, `Respondidas: ${answered} de ${total}`);
+  return lines.join("\n");
+}
+
+function renderSummary() {
+  document.getElementById("stepLabel").textContent = "Revisar y enviar";
+  const text = buildText();
+  const subject = `Cuestionario de vagones${state.who.nombre ? " — " + state.who.nombre : ""}`;
+  app.innerHTML = `<section class="card">
+    <h2>¡Gracias! Revise y envíe sus respuestas</h2>
+    <p class="muted">Se arma un correo para <strong>${esc(TO)}</strong> con todas las respuestas. Elija cómo enviarlo. Si el correo no se abre, use «Copiar respuestas» y péguelas en un mensaje (correo o WhatsApp).</p>
+    <div class="actions">
+      <button class="primary" id="gmail" type="button">Enviar con Gmail</button>
+      <button id="mailto" type="button">Abrir mi app de correo</button>
+      <button id="copy" type="button">Copiar respuestas</button>
+    </div>
+    <p class="muted" style="margin:14px 0 6px">Vista previa:</p>
+    <div class="summary">${esc(text)}</div>
+    <p class="muted" style="margin-top:12px"><button class="link-btn" id="download" type="button">Descargar como archivo .txt</button> · <button class="link-btn" id="reset" type="button">Borrar respuestas y empezar de nuevo</button></p>
+  </section>`;
+
+  const copy = async () => { try { await navigator.clipboard.writeText(text); return true; } catch (e) { return false; } };
+  /* Los enlaces de correo tienen un largo máximo (Gmail ~6.000, otras apps ~1.800 caracteres).
+     Si las respuestas no caben, se copian y el correo se abre pidiendo pegarlas. */
+  const bodyFor = async (limit) => {
+    const full = encodeURIComponent(text);
+    if (full.length <= limit) return full;
+    const ok = await copy();
+    toast(ok ? "Respuestas copiadas: péguelas en el correo con Ctrl+V" : "Use «Copiar respuestas» y péguelas en el correo");
+    return encodeURIComponent("Las respuestas son largas para el enlace: pegue aquí el texto copiado (Ctrl+V).\n\n");
+  };
+  document.getElementById("gmail").onclick = async () => {
+    // Se abre la pestaña de inmediato (si no, el navegador la bloquea) y luego se carga el correo.
+    const win = window.open("about:blank", "_blank");
+    const url = `https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(TO)}&su=${encodeURIComponent(subject)}&body=${await bodyFor(6000)}`;
+    if (win) win.location.href = url; else window.location.href = url;
+  };
+  document.getElementById("mailto").onclick = async () => {
+    window.location.href = `mailto:${TO}?subject=${encodeURIComponent(subject)}&body=${await bodyFor(1800)}`;
+  };
+  document.getElementById("copy").onclick = async () => toast((await copy()) ? "Respuestas copiadas" : "No se pudo copiar: seleccione el texto de la vista previa");
+  document.getElementById("download").onclick = () => {
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(new Blob([text], { type: "text/plain;charset=utf-8" }));
+    a.download = "cuestionario-vagones.txt";
+    a.click();
+    URL.revokeObjectURL(a.href);
+  };
+  document.getElementById("reset").onclick = () => {
+    if (!confirm("¿Borrar todas las respuestas?")) return;
+    state = { step: 0, who: { nombre: "", cargo: "" }, answers: {} };
+    save(); render();
+  };
+}
+
+function toast(msg) {
+  const t = document.getElementById("toast");
+  t.textContent = msg; t.classList.add("show");
+  clearTimeout(toast._t); toast._t = setTimeout(() => t.classList.remove("show"), 2200);
+}
+
+function go(delta) {
+  state.step = Math.min(TOTAL - 1, Math.max(0, state.step + delta));
+  save(); render(); window.scrollTo({ top: 0, behavior: "smooth" });
+}
+document.getElementById("prev").onclick = () => go(-1);
+document.getElementById("next").onclick = () => go(1);
+render();
+</script>
+</body>
+</html>
